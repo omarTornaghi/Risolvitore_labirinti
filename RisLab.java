@@ -131,7 +131,7 @@ public class RisLab {
             }
             nodoRiga = null;
         }
-        // Inserisco il nodo finale
+        /* Inserisco il nodo finale */
         NodoLab finale = new NodoLab(altezza - 1, lunghezza - 2);
         if (arrColonne[lunghezza - 2] != null) {
             int distanza = finale.getI() - arrColonne[lunghezza - 2].getI();
@@ -141,7 +141,7 @@ public class RisLab {
             finale.setDistSup(distanza);
         }
         grafo.inserisciNodo(finale);
-        // grafo.ottimizzaGrafo();
+        grafo.ottimizzaGrafo();
         return grafo;
     }
 
