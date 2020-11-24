@@ -32,7 +32,7 @@ public class RisLab {
         if (args.length > 0) {
             trovaPercorso(args[0]);
         } else
-            trovaPercorso("Esempi/lab_100x100.txt");
+            trovaPercorso("Esempi/lab_10x10(0).txt");
     }
 
     private static void trovaPercorso(String percorsoFile) throws FileNotFoundException, IOException {
@@ -195,7 +195,9 @@ public class RisLab {
 
     private static void stampaGrafo(boolean[][] labirinto, GrafoNodi grafo, int lunghezza, int altezza) {
         Queue<NodoLab> nodi = grafo.convertiInCoda();
-        NodoLab primo = nodi.remove();
+        NodoLab primo = null;
+        if (!nodi.isEmpty())
+            primo = nodi.remove();
         boolean disegnaRiga = false;
         boolean[] disegnaColonna = new boolean[lunghezza];
         for (int i = 0; i < altezza; i++) {
@@ -205,7 +207,7 @@ public class RisLab {
                     disegnaRiga = false;
                     continue;
                 }
-                if (primo.getI() == i && primo.getJ() == j) { /* Se è un nodo */
+                if (primo != null && primo.getI() == i && primo.getJ() == j) { /* Se è un nodo */
                     System.out.print(ANSI_RED + ANSI_WHITE_BACKGROUND + primo + ANSI_RESET);
                     disegnaRiga = primo.getDes() != null ? true : false;
                     disegnaColonna[j] = primo.getInf() != null ? true : false;

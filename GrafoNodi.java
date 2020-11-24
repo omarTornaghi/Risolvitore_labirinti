@@ -92,7 +92,7 @@ public class GrafoNodi {
             nodoScorrimento = coda.getFirst();
         } /* Fine while */
 
-        if (isNodoFinale(nodoScorrimento.nodo)) {
+        if (nodoScorrimento != null && isNodoFinale(nodoScorrimento.nodo)) {
             /* Percorso trovato */
             lista.add(nodoScorrimento);
         } else /* Percorso non trovato */
