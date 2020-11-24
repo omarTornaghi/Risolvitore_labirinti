@@ -11,8 +11,10 @@ import java.util.List;
 import java.util.Queue;
 import java.util.Scanner;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -30,7 +32,7 @@ public class RisLab {
         if (args.length > 0) {
             trovaPercorso(args[0]);
         } else
-            trovaPercorso("Esempi/lab_30x30.txt");
+            trovaPercorso("Esempi/lab_100x100.txt");
     }
 
     private static void trovaPercorso(String percorsoFile) throws FileNotFoundException, IOException {
@@ -43,26 +45,43 @@ public class RisLab {
         /* Creo il grafo associato */
         System.out.println("Conversione del labirinto in grafo...");
         GrafoNodi grafo = convertiMatrInGrafo(labirinto, lunghezza, altezza);
-        System.out.print("Grafo creato vuoi stamparlo?[S/N]: ");
-        Scanner scanner = new Scanner(System.in);
-        String resp = scanner.nextLine();
-        while (!resp.toLowerCase().equals("s") && !resp.toLowerCase().equals("n")) {
-            System.out.print("Carattere non consentito\nS-> si\nN-> no\n> ");
-            resp = scanner.nextLine();
-        }
-        scanner.close();
         /* Stampo il grafo */
-        if (resp.toLowerCase().equals("s"))
-            stampaGrafo(labirinto, grafo, lunghezza, altezza);
+        if (lunghezza < 160) {
+            System.out.print("Grafo creato vuoi stamparlo?[S/N]: ");
+            Scanner scanner = new Scanner(System.in);
+            String resp = scanner.nextLine();
+            while (!resp.toLowerCase().equals("s") && !resp.toLowerCase().equals("n")) {
+                System.out.print("Carattere non consentito\nS-> si\nN-> no\n> ");
+                resp = scanner.nextLine();
+            }
+            scanner.close();
 
+            if (resp.toLowerCase().equals("s"))
+                stampaGrafo(labirinto, grafo, lunghezza, altezza);
+        }
         /* Trovo il percorso più breve utilizzando l'algoritmo di dijkstra */
         System.out.println("Calcolando il percorso più breve...");
         LinkedList<NodoLab> percorso = grafo.dijkstra();
         if (percorso == null)
             System.out.println("Impossibile trovare un percorso");
         else {
+            /* Ordino la soluzione */
+            if (percorso.size() > 0) {
+                percorso.sort((a, b) -> Integer.compare(a.getChiave(), b.getChiave()));
+            }
+            /* Stampo il percorso su stringa e nel caso anche su schermo */
             System.out.println("Percorso trovato:\n");
-            stampaPercorso(labirinto, percorso, lunghezza, altezza);
+            String percorsoStr;
+            if (lunghezza <= 180)
+                percorsoStr = stampaPercorso(labirinto, percorso, lunghezza, altezza, true);
+            else {
+                System.out.println("Il labirinto è troppo grande per essere visualizzato");
+                percorsoStr = stampaPercorso(labirinto, percorso, lunghezza, altezza, false);
+            }
+            /* Salvo il percorso su file */
+            percorsoFile = percorsoFile.substring(0, percorsoFile.lastIndexOf(".")) + "_RISOLTO.txt";
+            salvaSuFile(percorsoStr, percorsoFile);
+            System.out.println("Soluzione salvata come \"" + percorsoFile + "\"");
         }
     }
 
@@ -206,36 +225,61 @@ public class RisLab {
         System.out.println();
     }
 
-    private static void stampaPercorso(boolean[][] labirinto, List<NodoLab> percorso, int lunghezza, int altezza) {
-        NodoLab primo = null;
-        if (percorso.size() > 0) {
-            percorso.sort((a, b) -> Integer.compare(a.getChiave(), b.getChiave()));
-            primo = percorso.remove(0);
-        }
+    private static String stampaPercorso(boolean[][] labirinto, List<NodoLab> percorso, int lunghezza, int altezza,
+            boolean monitor) {
+        String outputStr = "";
+        NodoLab primo = percorso.remove(0);
         boolean disegnaRiga = false;
         boolean[] disegnaColonna = new boolean[lunghezza];
         for (int i = 0; i < altezza; i++) {
             for (int j = 0; j < lunghezza; j++) {
                 if (labirinto[i][j]) { /* Se la cella è un muro */
-                    System.out.print(ANSI_BLACK_BACKGROUND + " " + ANSI_RESET);
+                    if (monitor)
+                        System.out.print(ANSI_BLACK_BACKGROUND + " " + ANSI_RESET);
+                    outputStr += "#";
                     disegnaRiga = false;
                     continue;
                 }
                 if (primo.getI() == i && primo.getJ() == j) { /* Se è un nodo */
-                    System.out.print(ANSI_BLUE_BACKGROUND + " " + ANSI_RESET);
+                    if (monitor)
+                        System.out.print(ANSI_BLUE_BACKGROUND + " " + ANSI_RESET);
+                    outputStr += "P";
                     disegnaRiga = primo.getDes() != null ? true : false;
                     disegnaColonna[j] = primo.getInf() != null ? true : false;
                     if (!percorso.isEmpty())
                         primo = percorso.remove(0);
                 } else {
-                    if (disegnaRiga || disegnaColonna[j])
-                        System.out.print(ANSI_BLUE_BACKGROUND + " " + ANSI_RESET);
-                    else
-                        System.out.print(ANSI_WHITE_BACKGROUND + " " + ANSI_RESET);
+                    if (disegnaRiga || disegnaColonna[j]) {
+                        if (monitor)
+                            System.out.print(ANSI_BLUE_BACKGROUND + " " + ANSI_RESET);
+                        outputStr += "P";
+                    } else {
+                        if (monitor)
+                            System.out.print(ANSI_WHITE_BACKGROUND + " " + ANSI_RESET);
+                        outputStr += ".";
+                    }
                 }
             }
-            System.out.println();
+            if (monitor)
+                System.out.println();
+            outputStr += i == altezza - 1 ? "" : "\n";
         }
+        return outputStr;
     }
 
+    private static void salvaSuFile(String percorso, String percorsoFile) {
+        BufferedWriter writer = null;
+        try {
+            writer = new BufferedWriter(new FileWriter(percorsoFile));
+            writer.write(percorso);
+
+        } catch (IOException e) {
+        } finally {
+            try {
+                if (writer != null)
+                    writer.close();
+            } catch (IOException e) {
+            }
+        }
+    }
 }
